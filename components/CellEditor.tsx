@@ -72,17 +72,21 @@ export default function CellEditor({
   if (isEditing) {
     return (
       <td className="border p-2">
-        <input
-          type="text"
+        <textarea
           value={editValue}
           onChange={(e) => setEditValue(e.target.value)}
           onBlur={handleSave}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') handleSave()
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault()
+              handleSave()
+            }
             if (e.key === 'Escape') handleCancel()
           }}
-          className="w-full p-1 border rounded"
+          className="w-full p-1 border rounded resize-none"
           autoFocus
+          rows={Math.max(1, editValue.split('\n').length)}
+          style={{ minHeight: '1.5rem' }}
         />
       </td>
     )
@@ -102,19 +106,21 @@ export default function CellEditor({
       <div className="min-h-[1.5rem] relative">
         {cell.status ? (
           <div className="relative w-full">
-            <span className="invisible">{cell.value || '\u00A0'}</span>
+            <span className="invisible whitespace-pre-wrap break-words">{cell.value || '\u00A0'}</span>
             <div 
-              className="absolute inset-0 rounded"
+              className="absolute rounded"
               style={{ 
                 backgroundColor: cell.color,
-                height: '1.2em',
+                height: '1.5rem',
+                width: '100%',
                 top: '50%',
+                left: 0,
                 transform: 'translateY(-50%)'
               }}
             />
           </div>
         ) : (
-          <span className="overflow-hidden text-ellipsis">
+          <span className="whitespace-pre-wrap break-words">
             {cell.value || '\u00A0'}
           </span>
         )}
