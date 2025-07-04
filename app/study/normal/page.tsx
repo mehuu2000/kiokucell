@@ -7,6 +7,7 @@ import { useData } from '@/contexts/DataContext'
 import { CellData } from '@/types/cell'
 import CellEditor from '@/components/CellEditor'
 import ColorEditModal from '@/components/ColorEditModal'
+import HelpModal from '@/components/HelpModal'
 import { exportToKiokucellCsv } from '@/utils/fileExporter'
 
 export default function NormalStudyPage() {
@@ -17,12 +18,22 @@ export default function NormalStudyPage() {
   const [selectedColumns, setSelectedColumns] = useState<Set<number>>(new Set())
   const [isEditMode, setIsEditMode] = useState(false)
   const [isColorModalOpen, setIsColorModalOpen] = useState(false)
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false)
 
   useEffect(() => {
     if (!fileData) {
       router.push('/top')
+    } else if (fileData.rows.length === 0) {
+      // 空のファイルの場合、初期行を追加
+      const initialRow = fileData.headers.map(() => ({
+        value: '',
+        backColor: 'none',
+        color: 'black',
+        status: false
+      }))
+      setFileData({ ...fileData, rows: [initialRow] })
     }
-  }, [fileData, router])
+  }, [fileData, router, setFileData])
 
   if (!fileData) {
     return null
@@ -137,6 +148,13 @@ export default function NormalStudyPage() {
   }
 
   const deleteSelectedRows = () => {
+    const rowCount = selectedRows.size
+    const message = `選択した${rowCount}行を削除してもよろしいですか？\nこの操作は取り消せません。`
+    
+    if (!window.confirm(message)) {
+      return
+    }
+    
     const sortedRows = Array.from(selectedRows).sort((a, b) => b - a)
     const newRows = [...fileData.rows]
     
@@ -150,6 +168,13 @@ export default function NormalStudyPage() {
   }
 
   const deleteSelectedColumns = () => {
+    const columnCount = selectedColumns.size
+    const message = `選択した${columnCount}列を削除してもよろしいですか？\nこの操作は取り消せません。`
+    
+    if (!window.confirm(message)) {
+      return
+    }
+    
     const sortedColumns = Array.from(selectedColumns).sort((a, b) => b - a)
     const newHeaders = [...fileData.headers]
     const newRows = fileData.rows.map(row => [...row])
@@ -237,11 +262,42 @@ export default function NormalStudyPage() {
     setFileData({ ...fileData, rows: newRows })
   }
 
+  const helpContent = {
+    title: '通常学習の使い方',
+    sections: [
+      {
+        heading: 'モードについて',
+        description: '• 通常モード：セルの表示/非表示の切り替えと色の編集ができます\n• 編集モード：セルの内容を編集、行・列の追加・削除ができます'
+      },
+      {
+        heading: 'セルの操作',
+        description: '• シングルクリック：表示/非表示の切り替え（通常モード）、内容の編集（編集モード）\n• ダブルクリック：セルの選択\n• 列ヘッダーをクリック：列全体を選択\n• チェックボックス：行の選択'
+      },
+      {
+        heading: '機能説明',
+        description: '• 隠す/表示する：選択したセルの表示状態を変更\n• 色編集：選択したセルの文字色と背景色を変更\n• 削除：選択した行または列を削除（確認あり）\n• 行/列を追加：表の最後に新しい行または列を追加'
+      },
+      {
+        heading: 'データの保存',
+        description: '「書き出し」ボタンで.kiokucell.csv形式で保存できます。\nこの形式では、セルの色や表示状態も保存されます。'
+      }
+    ]
+  }
+
   return (
     <div className="min-h-screen bg-gray-50/50 p-2 sm:p-4 lg:p-8">
       <div className="max-w-full mx-auto">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">通常学習</h1>
+          <div className="relative inline-block">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold inline-block">通常学習</h1>
+            <button
+              onClick={() => setIsHelpModalOpen(true)}
+              className="absolute -right-8 bottom-0 w-6 h-6 bg-gray-50 text-blue-500 border border-blue-500 rounded-full hover:bg-blue-50 transition flex items-center justify-center text-xs font-bold"
+              aria-label="ヘルプ"
+            >
+              ?
+            </button>
+          </div>
           <div className="flex gap-2">
             <button
               onClick={handleExport}
@@ -274,53 +330,85 @@ export default function NormalStudyPage() {
               </button>
               {!isEditMode ? (
                 <>
-                  <button
-                    onClick={hideSelectedCells}
-                    className={`px-3 sm:px-4 py-2 rounded transition text-sm sm:text-base ${
-                      selectedCells.size > 0
-                        ? 'bg-red-500 text-white hover:bg-red-600'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
-                    disabled={selectedCells.size === 0}
-                  >
-                    隠す
-                  </button>
-                  <button
-                    onClick={showSelectedCells}
-                    className={`px-3 sm:px-4 py-2 rounded transition text-sm sm:text-base ${
-                      selectedCells.size > 0
-                        ? 'bg-blue-500 text-white hover:bg-blue-600'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
-                    disabled={selectedCells.size === 0}
-                  >
-                    表示する
-                  </button>
-                  <button
-                    onClick={() => setIsColorModalOpen(true)}
-                    className={`px-3 sm:px-4 py-2 rounded transition text-sm sm:text-base ${
-                      selectedCells.size > 0
-                        ? 'bg-indigo-500 text-white hover:bg-indigo-600'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
-                    disabled={selectedCells.size === 0}
-                  >
-                    色編集
-                  </button>
+                  <div className="relative group inline-block">
+                    <button
+                      onClick={hideSelectedCells}
+                      className={`px-3 sm:px-4 py-2 rounded transition text-sm sm:text-base ${
+                        selectedCells.size > 0
+                          ? 'bg-red-500 text-white hover:bg-red-600'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                      disabled={selectedCells.size === 0}
+                    >
+                      隠す
+                    </button>
+                    {selectedCells.size === 0 && (
+                      <div className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                        セルを選択してください
+                        <div className="absolute left-1/2 transform -translate-x-1/2 top-full w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-800"></div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="relative group inline-block">
+                    <button
+                      onClick={showSelectedCells}
+                      className={`px-3 sm:px-4 py-2 rounded transition text-sm sm:text-base ${
+                        selectedCells.size > 0
+                          ? 'bg-blue-500 text-white hover:bg-blue-600'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                      disabled={selectedCells.size === 0}
+                    >
+                      表示する
+                    </button>
+                    {selectedCells.size === 0 && (
+                      <div className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                        セルを選択してください
+                        <div className="absolute left-1/2 transform -translate-x-1/2 top-full w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-800"></div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="relative group inline-block">
+                    <button
+                      onClick={() => setIsColorModalOpen(true)}
+                      className={`px-3 sm:px-4 py-2 rounded transition text-sm sm:text-base ${
+                        selectedCells.size > 0
+                          ? 'bg-indigo-500 text-white hover:bg-indigo-600'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                      disabled={selectedCells.size === 0}
+                    >
+                      色編集
+                    </button>
+                    {selectedCells.size === 0 && (
+                      <div className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                        セルを選択してください
+                        <div className="absolute left-1/2 transform -translate-x-1/2 top-full w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-800"></div>
+                      </div>
+                    )}
+                  </div>
                 </>
               ) : (
                 <>
-                  <button
-                    onClick={deleteSelected}
-                    className={`px-3 sm:px-4 py-2 rounded transition text-sm sm:text-base ${
-                      canDelete
-                        ? 'bg-red-700 text-white hover:bg-red-800'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
-                    disabled={!canDelete}
-                  >
-                    {getDeleteButtonText()}
-                  </button>
+                  <div className="relative group inline-block">
+                    <button
+                      onClick={deleteSelected}
+                      className={`px-3 sm:px-4 py-2 rounded transition text-sm sm:text-base ${
+                        canDelete
+                          ? 'bg-red-700 text-white hover:bg-red-800'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                      disabled={!canDelete}
+                    >
+                      {getDeleteButtonText()}
+                    </button>
+                    {!canDelete && (
+                      <div className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                        行または列を選択してください
+                        <div className="absolute left-1/2 transform -translate-x-1/2 top-full w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-800"></div>
+                      </div>
+                    )}
+                  </div>
                   <button
                     onClick={addNewRow}
                     className="bg-green-500 text-white px-3 sm:px-4 py-2 rounded hover:bg-green-600 text-sm sm:text-base"
@@ -412,6 +500,12 @@ export default function NormalStudyPage() {
         isOpen={isColorModalOpen}
         onClose={() => setIsColorModalOpen(false)}
         onSave={handleColorEdit}
+      />
+      
+      <HelpModal
+        isOpen={isHelpModalOpen}
+        onClose={() => setIsHelpModalOpen(false)}
+        content={helpContent}
       />
     </div>
   )

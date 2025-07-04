@@ -4,6 +4,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Suspense, useState, useEffect } from 'react'
 import { useData } from '@/contexts/DataContext'
+import HelpModal from '@/components/HelpModal'
 
 function FeatureStudyContent() {
   const searchParams = useSearchParams()
@@ -13,6 +14,7 @@ function FeatureStudyContent() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showAnswer, setShowAnswer] = useState(false)
   const [randomOrder, setRandomOrder] = useState<number[]>([])
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false)
 
   useEffect(() => {
     if (!fileData || fileData.headers.length !== 2) {
@@ -58,13 +60,46 @@ function FeatureStudyContent() {
     setShowAnswer(!showAnswer)
   }
 
+  const helpContent = {
+    title: type === 'key' ? '用語学習の使い方' : '説明学習の使い方',
+    sections: [
+      {
+        heading: '学習の流れ',
+        description: type === 'key' 
+          ? '1列目の用語が問題として表示されます。\nカードをクリックすると、2列目の説明が答えとして表示されます。'
+          : '2列目の説明が問題として表示されます。\nカードをクリックすると、1列目の用語が答えとして表示されます。'
+      },
+      {
+        heading: '操作方法',
+        description: '• カードをクリック：答えの表示/非表示\n• 前へボタン：前の問題に戻る\n• 次へボタン：次の問題に進む'
+      },
+      {
+        heading: '出題順序',
+        description: '問題はランダムな順序で出題されます。\n最後まで進むと、再度ランダムな順序で最初から始まります。'
+      },
+      {
+        heading: 'カードの色',
+        description: '• 白色のカード：問題が表示されている状態\n• 緑色のカード：答えが表示されている状態'
+      }
+    ]
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">
-            {type === 'key' ? '用語学習' : '説明学習'}
-          </h1>
+          <div className="relative inline-block">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold inline-block">
+              {type === 'key' ? '用語学習' : '説明学習'}
+            </h1>
+            <button
+              onClick={() => setIsHelpModalOpen(true)}
+              className="absolute -right-8 bottom-0 w-6 h-6 bg-gray-50 text-blue-500 border border-blue-500 rounded-full hover:bg-blue-50 transition flex items-center justify-center text-xs font-bold"
+              aria-label="ヘルプ"
+            >
+              ?
+            </button>
+          </div>
           <Link
             href="/top"
             className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
@@ -126,6 +161,12 @@ function FeatureStudyContent() {
           </div>
         </div>
       </div>
+      
+      <HelpModal
+        isOpen={isHelpModalOpen}
+        onClose={() => setIsHelpModalOpen(false)}
+        content={helpContent}
+      />
     </div>
   )
 }
