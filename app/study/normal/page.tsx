@@ -8,6 +8,7 @@ import { CellData } from '@/types/cell'
 import CellEditor from '@/components/CellEditor'
 import ColorEditModal from '@/components/ColorEditModal'
 import HelpModal from '@/components/HelpModal'
+import HeaderEditModal from '@/components/HeaderEditModal'
 import { exportToKiokucellCsv } from '@/utils/fileExporter'
 
 export default function NormalStudyPage() {
@@ -19,6 +20,9 @@ export default function NormalStudyPage() {
   const [isEditMode, setIsEditMode] = useState(false)
   const [isColorModalOpen, setIsColorModalOpen] = useState(false)
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false)
+  const [isHeaderEditModalOpen, setIsHeaderEditModalOpen] = useState(false)
+  const [editingHeaderIndex, setEditingHeaderIndex] = useState<number | null>(null)
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     if (!fileData) {
@@ -262,6 +266,39 @@ export default function NormalStudyPage() {
     setFileData({ ...fileData, rows: newRows })
   }
 
+  const handleHeaderEdit = (index: number) => {
+    setEditingHeaderIndex(index)
+    setIsHeaderEditModalOpen(true)
+  }
+
+  const handleHeaderSave = (newHeader: string) => {
+    if (editingHeaderIndex !== null) {
+      const newHeaders = [...fileData.headers]
+      newHeaders[editingHeaderIndex] = newHeader
+      setFileData({ ...fileData, headers: newHeaders })
+      setEditingHeaderIndex(null)
+    }
+  }
+
+  const handleHeaderContextMenu = (e: React.MouseEvent, index: number) => {
+    e.preventDefault()
+    handleHeaderEdit(index)
+  }
+
+  const handleHeaderTouchStart = (index: number) => {
+    const timer = setTimeout(() => {
+      handleHeaderEdit(index)
+    }, 500) // 500ms長押し
+    setLongPressTimer(timer)
+  }
+
+  const handleHeaderTouchEnd = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer)
+      setLongPressTimer(null)
+    }
+  }
+
   const helpContent = {
     title: '通常学習の使い方',
     sections: [
@@ -272,6 +309,10 @@ export default function NormalStudyPage() {
       {
         heading: 'セルの操作',
         description: '• シングルクリック：表示/非表示の切り替え（通常モード）、内容の編集（編集モード）\n• ダブルクリック：セルの選択\n• 列ヘッダーをクリック：列全体を選択\n• チェックボックス：行の選択'
+      },
+      {
+        heading: 'ヘッダーの編集',
+        description: '• 右クリック：列名を編集（PC）\n• 長押し：列名を編集（スマホ・タブレット）'
       },
       {
         heading: '機能説明',
@@ -285,61 +326,75 @@ export default function NormalStudyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50 p-2 sm:p-4 lg:p-8">
+    <div className="min-h-screen p-2 sm:p-4 lg:p-8">
       <div className="max-w-full mx-auto">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 sm:mb-6">
           <div className="relative inline-block">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold inline-block">通常学習</h1>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent inline-block">通常学習</h1>
             <button
               onClick={() => setIsHelpModalOpen(true)}
-              className="absolute -right-8 bottom-0 w-6 h-6 bg-gray-50 text-blue-500 border border-blue-500 rounded-full hover:bg-blue-50 transition flex items-center justify-center text-xs font-bold"
+              className="absolute -right-8 bottom-0 w-8 h-8 bg-white/80 backdrop-blur text-blue-600 border-2 border-blue-200 rounded-full hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 flex items-center justify-center text-sm font-bold shadow-md hover:shadow-lg"
               aria-label="ヘルプ"
             >
               ?
             </button>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <button
               onClick={handleExport}
-              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+              className="btn-success flex items-center"
             >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
               書き出し
             </button>
             <Link
               href="/top"
-              className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+              className="btn-secondary flex items-center"
             >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
               戻る
             </Link>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-3 sm:p-6 mb-4">
+        <div className="card p-4 sm:p-6 mb-4">
           <div className="flex flex-col lg:flex-row gap-3 mb-4 lg:justify-between">
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={clearAllSelections}
-                className={`px-3 sm:px-4 py-2 rounded transition text-sm sm:text-base ${
+                className={`px-4 py-2.5 rounded-xl font-medium transition-all duration-200 text-sm sm:text-base ${
                   hasAnySelection
-                    ? 'bg-gray-600 text-white hover:bg-gray-700'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    ? 'bg-gray-600 text-white hover:bg-gray-700 shadow-md hover:shadow-lg hover:-translate-y-0.5'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 }`}
                 disabled={!hasAnySelection}
               >
-                選択解除
+                <span className="flex items-center">
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  選択解除
+                </span>
               </button>
               {!isEditMode ? (
                 <>
                   <div className="relative group inline-block">
                     <button
                       onClick={hideSelectedCells}
-                      className={`px-3 sm:px-4 py-2 rounded transition text-sm sm:text-base ${
+                      className={`px-4 py-2.5 rounded-xl font-medium transition-all duration-200 text-sm sm:text-base flex items-center ${
                         selectedCells.size > 0
-                          ? 'bg-red-500 text-white hover:bg-red-600'
-                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          ? 'btn-danger'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                       }`}
                       disabled={selectedCells.size === 0}
                     >
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      </svg>
                       隠す
                     </button>
                     {selectedCells.size === 0 && (
@@ -352,13 +407,17 @@ export default function NormalStudyPage() {
                   <div className="relative group inline-block">
                     <button
                       onClick={showSelectedCells}
-                      className={`px-3 sm:px-4 py-2 rounded transition text-sm sm:text-base ${
+                      className={`px-4 py-2.5 rounded-xl font-medium transition-all duration-200 text-sm sm:text-base flex items-center ${
                         selectedCells.size > 0
-                          ? 'bg-blue-500 text-white hover:bg-blue-600'
-                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          ? 'btn-primary'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                       }`}
                       disabled={selectedCells.size === 0}
                     >
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
                       表示する
                     </button>
                     {selectedCells.size === 0 && (
@@ -371,13 +430,16 @@ export default function NormalStudyPage() {
                   <div className="relative group inline-block">
                     <button
                       onClick={() => setIsColorModalOpen(true)}
-                      className={`px-3 sm:px-4 py-2 rounded transition text-sm sm:text-base ${
+                      className={`px-4 py-2.5 rounded-xl font-medium transition-all duration-200 text-sm sm:text-base flex items-center ${
                         selectedCells.size > 0
-                          ? 'bg-indigo-500 text-white hover:bg-indigo-600'
-                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                       }`}
                       disabled={selectedCells.size === 0}
                     >
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                      </svg>
                       色編集
                     </button>
                     {selectedCells.size === 0 && (
@@ -393,13 +455,16 @@ export default function NormalStudyPage() {
                   <div className="relative group inline-block">
                     <button
                       onClick={deleteSelected}
-                      className={`px-3 sm:px-4 py-2 rounded transition text-sm sm:text-base ${
+                      className={`px-4 py-2.5 rounded-xl font-medium transition-all duration-200 text-sm sm:text-base flex items-center ${
                         canDelete
-                          ? 'bg-red-700 text-white hover:bg-red-800'
-                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          ? 'btn-danger'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                       }`}
                       disabled={!canDelete}
                     >
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
                       {getDeleteButtonText()}
                     </button>
                     {!canDelete && (
@@ -411,14 +476,20 @@ export default function NormalStudyPage() {
                   </div>
                   <button
                     onClick={addNewRow}
-                    className="bg-green-500 text-white px-3 sm:px-4 py-2 rounded hover:bg-green-600 text-sm sm:text-base"
+                    className="btn-success flex items-center text-sm sm:text-base"
                   >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
                     行を追加
                   </button>
                   <button
                     onClick={addNewColumn}
-                    className="bg-green-500 text-white px-3 sm:px-4 py-2 rounded hover:bg-green-600 text-sm sm:text-base"
+                    className="btn-success flex items-center text-sm sm:text-base"
                   >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
                     列を追加
                   </button>
                 </>
@@ -427,40 +498,64 @@ export default function NormalStudyPage() {
             <div className="flex justify-end lg:justify-start">
               <button
                 onClick={() => setIsEditMode(!isEditMode)}
-                className={`px-3 sm:px-4 py-2 rounded transition text-sm sm:text-base w-full sm:w-auto ${
+                className={`px-5 py-2.5 rounded-xl font-medium transition-all duration-200 text-sm sm:text-base w-full sm:w-auto flex items-center justify-center shadow-lg hover:shadow-xl hover:-translate-y-0.5 ${
                   isEditMode 
-                    ? 'bg-orange-500 text-white hover:bg-orange-600' 
-                    : 'bg-purple-500 text-white hover:bg-purple-600'
+                    ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600' 
+                    : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600'
                 }`}
               >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {isEditMode ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  )}
+                </svg>
                 {isEditMode ? '編集モード' : '通常モード'}
               </button>
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
+          <div className="overflow-x-auto rounded-xl">
+            <table className="w-full" style={{ tableLayout: 'fixed' }}>
               <thead>
-                <tr>
+                <tr className="bg-gradient-to-r from-gray-50 to-gray-100">
                   <th 
-                    className="border p-2 bg-gray-100 cursor-pointer hover:bg-gray-200"
+                    className="p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-200/50 transition-colors duration-200 rounded-tl-xl"
                     style={{ width: '48px' }}
                     onClick={toggleAllRows}
                   >
-                    {selectedRows.size === fileData.rows.length && '✓'}
+                    <div className="flex items-center justify-center">
+                      {selectedRows.size === fileData.rows.length ? (
+                        <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <div className="w-5 h-5 border-2 border-gray-300 rounded"></div>
+                      )}
+                    </div>
                   </th>
                   {fileData.headers.map((header, index) => {
                     const columnWidth = `${(100 - 5) / fileData.headers.length}%`
+                    const isLast = index === fileData.headers.length - 1
                     return (
                       <th
                         key={index}
-                        className="border p-2 bg-gray-100 cursor-pointer hover:bg-gray-200"
+                        className={`p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-200/50 transition-colors duration-200 select-none ${isLast ? 'rounded-tr-xl' : ''}`}
                         style={{ width: columnWidth }}
                         onClick={() => toggleColumnSelection(index)}
+                        onContextMenu={(e) => handleHeaderContextMenu(e, index)}
+                        onTouchStart={() => handleHeaderTouchStart(index)}
+                        onTouchEnd={handleHeaderTouchEnd}
+                        onTouchMove={handleHeaderTouchEnd}
                       >
-                        <div className="overflow-hidden text-ellipsis whitespace-nowrap">
-                          {header}
-                          {selectedColumns.has(index) && ' ✓'}
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-gray-700 overflow-hidden text-ellipsis whitespace-nowrap">{header}</span>
+                          {selectedColumns.has(index) && (
+                            <svg className="w-4 h-4 text-blue-600 ml-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
                         </div>
                       </th>
                     )
@@ -469,13 +564,16 @@ export default function NormalStudyPage() {
               </thead>
               <tbody>
                 {fileData.rows.map((row, rowIndex) => (
-                  <tr key={rowIndex}>
-                    <td className="border p-1 text-center" style={{ width: '48px' }}>
-                      <input
-                        type="checkbox"
-                        checked={selectedRows.has(rowIndex)}
-                        onChange={() => toggleRowSelection(rowIndex)}
-                      />
+                  <tr key={rowIndex} className="hover:bg-gray-50/50 transition-colors duration-150">
+                    <td className="p-2 border-b border-gray-100 text-center" style={{ width: '48px' }}>
+                      <label className="flex items-center justify-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedRows.has(rowIndex)}
+                          onChange={() => toggleRowSelection(rowIndex)}
+                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                      </label>
                     </td>
                     {row.map((cell, colIndex) => (
                       <CellEditor
@@ -507,6 +605,19 @@ export default function NormalStudyPage() {
         onClose={() => setIsHelpModalOpen(false)}
         content={helpContent}
       />
+      
+      {editingHeaderIndex !== null && (
+        <HeaderEditModal
+          isOpen={isHeaderEditModalOpen}
+          onClose={() => {
+            setIsHeaderEditModalOpen(false)
+            setEditingHeaderIndex(null)
+          }}
+          onSave={handleHeaderSave}
+          currentHeader={fileData.headers[editingHeaderIndex]}
+          headerIndex={editingHeaderIndex}
+        />
+      )}
     </div>
   )
 }

@@ -42,16 +42,16 @@ export default function ColorEditModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-sm sm:max-w-md">
-        <h2 className="text-xl font-bold mb-4">色の編集</h2>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+      <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-sm sm:max-w-md transform transition-all duration-300 scale-100 animate-slideIn">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-6">色の編集</h2>
         
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">文字色</label>
+        <div className="mb-6">
+          <label className="block text-sm font-semibold text-gray-700 mb-3">文字色</label>
           <select
             value={color}
             onChange={(e) => setColor(e.target.value)}
-            className="w-full p-2 border rounded"
+            className="input-modern"
           >
             {colorOptions.filter(opt => opt.value !== 'none').map(option => (
               <option key={option.value} value={option.value}>
@@ -61,12 +61,12 @@ export default function ColorEditModal({
           </select>
         </div>
 
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">背景色</label>
+        <div className="mb-6">
+          <label className="block text-sm font-semibold text-gray-700 mb-3">背景色</label>
           <select
             value={backColor}
             onChange={(e) => setBackColor(e.target.value)}
-            className="w-full p-2 border rounded"
+            className="input-modern"
           >
             {colorOptions.map(option => (
               <option key={option.value} value={option.value}>
@@ -76,12 +76,12 @@ export default function ColorEditModal({
           </select>
         </div>
 
-        <div className="mb-6">
-          <label className="block text-sm font-medium mb-2">プレビュー</label>
+        <div className="mb-8">
+          <label className="block text-sm font-semibold text-gray-700 mb-3">プレビュー</label>
           <div 
-            className="h-12 border rounded flex items-center justify-center text-lg font-medium"
+            className="h-16 rounded-xl shadow-inner flex items-center justify-center text-xl font-bold transition-all duration-300"
             style={{ 
-              backgroundColor: backColor === 'none' ? 'white' : backColor,
+              backgroundColor: backColor === 'none' ? '#f9fafb' : backColor,
               color: color 
             }}
           >
@@ -89,16 +89,16 @@ export default function ColorEditModal({
           </div>
         </div>
 
-        <div className="flex gap-2 justify-end">
+        <div className="flex gap-3 justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+            className="btn-secondary"
           >
             キャンセル
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            className="btn-primary"
           >
             保存
           </button>

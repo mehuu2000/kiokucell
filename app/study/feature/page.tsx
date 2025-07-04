@@ -85,16 +85,16 @@ function FeatureStudyContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen p-4 sm:p-6 lg:p-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 sm:mb-6">
           <div className="relative inline-block">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold inline-block">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent inline-block">
               {type === 'key' ? '用語学習' : '説明学習'}
             </h1>
             <button
               onClick={() => setIsHelpModalOpen(true)}
-              className="absolute -right-8 bottom-0 w-6 h-6 bg-gray-50 text-blue-500 border border-blue-500 rounded-full hover:bg-blue-50 transition flex items-center justify-center text-xs font-bold"
+              className="absolute -right-8 bottom-0 w-8 h-8 bg-white/80 backdrop-blur text-blue-600 border-2 border-blue-200 rounded-full hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 flex items-center justify-center text-sm font-bold shadow-md hover:shadow-lg"
               aria-label="ヘルプ"
             >
               ?
@@ -102,34 +102,44 @@ function FeatureStudyContent() {
           </div>
           <Link
             href="/top"
-            className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+            className="btn-secondary flex items-center"
           >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
             戻る
           </Link>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
-          <div className="text-center mb-3 sm:mb-4">
-            <p className="text-xs sm:text-sm text-gray-600">
-              {currentIndex + 1} / {fileData.rows.length}
-            </p>
+        <div className="card p-6 sm:p-8">
+          <div className="text-center mb-4 sm:mb-6">
+            <div className="inline-flex items-center space-x-2 bg-gray-100 rounded-full px-4 py-2">
+              <span className="text-sm font-medium text-gray-600">進捗</span>
+              <span className="text-lg font-bold text-gray-800">{currentIndex + 1}</span>
+              <span className="text-sm text-gray-600">/</span>
+              <span className="text-lg font-bold text-gray-800">{fileData.rows.length}</span>
+            </div>
           </div>
 
           <div 
-            className={`rounded-lg p-4 sm:p-6 lg:p-8 cursor-pointer min-h-[150px] sm:min-h-[200px] flex items-center justify-center transition-colors duration-300 ${
+            className={`relative rounded-2xl p-8 sm:p-10 lg:p-12 cursor-pointer min-h-[200px] sm:min-h-[250px] flex items-center justify-center transition-all duration-500 transform hover:scale-[1.02] ${
               showAnswer 
-                ? 'bg-green-100 border-2 border-green-300' 
-                : 'bg-white border-2 border-gray-400'
+                ? 'bg-gradient-to-br from-green-50 to-emerald-100 shadow-2xl' 
+                : 'bg-gradient-to-br from-white to-gray-50 shadow-xl hover:shadow-2xl'
             }`}
             onClick={toggleAnswer}
           >
-            <div className="text-center">
-              <p className={`text-xs sm:text-sm font-medium mb-1 sm:mb-2 ${
-                showAnswer ? 'text-green-600' : 'text-gray-600'
+            <div className="absolute top-4 right-4">
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                showAnswer 
+                  ? 'bg-green-200 text-green-800' 
+                  : 'bg-gray-200 text-gray-800'
               }`}>
                 {showAnswer ? '答え' : '問題'}
-              </p>
-              <p className={`text-lg sm:text-xl lg:text-2xl font-medium text-center ${
+              </span>
+            </div>
+            <div className="text-center max-w-lg">
+              <p className={`text-xl sm:text-2xl lg:text-3xl font-bold leading-relaxed ${
                 showAnswer ? 'text-green-900' : 'text-gray-900'
               }`}>
                 {showAnswer 
@@ -138,25 +148,40 @@ function FeatureStudyContent() {
                 }
               </p>
             </div>
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+              <svg className={`w-6 h-6 animate-bounce ${showAnswer ? 'text-green-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13l-3 3m0 0l-3-3m3 3V8m0 13a9 9 0 110-18 9 9 0 010 18z" />
+              </svg>
+            </div>
           </div>
 
-          <p className="text-center text-sm text-gray-500 mt-2">
-            クリックして{showAnswer ? '問題' : '答え'}を表示
+          <p className="text-center text-sm text-gray-500 mt-4">
+            カードをクリックして{showAnswer ? '問題' : '答え'}を表示
           </p>
 
-          <div className="flex justify-between gap-4 mt-4 sm:mt-6">
+          <div className="flex justify-between gap-4 mt-6 sm:mt-8">
             <button
               onClick={handlePrevious}
-              className="bg-gray-300 text-gray-700 px-3 sm:px-4 py-2 rounded hover:bg-gray-400 text-sm sm:text-base flex-1 sm:flex-none"
+              className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 flex-1 sm:flex-none flex items-center justify-center ${
+                currentIndex === 0
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  : 'btn-secondary'
+              }`}
               disabled={currentIndex === 0}
             >
-              ← 前へ
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              前へ
             </button>
             <button
               onClick={handleNext}
-              className="bg-blue-500 text-white px-3 sm:px-4 py-2 rounded hover:bg-blue-600 text-sm sm:text-base flex-1 sm:flex-none"
+              className="btn-primary px-6 py-3 flex-1 sm:flex-none flex items-center justify-center"
             >
-              次へ →
+              次へ
+              <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </button>
           </div>
         </div>
